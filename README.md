@@ -5,3 +5,5 @@
 </p>
 
 [<img src="https://moco.mehiz.live/get/@Ero-gamer?theme=rule34" alt="moe-counter" />]()
+
+<img src="https://raw.githubusercontent.com/saadeghi/saadeghi/master/dino.gif"></img>
