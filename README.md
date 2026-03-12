@@ -1,3 +1,10 @@
+[<img src="https://raw.githubusercontent.com/Safouene1/support-palestine-banner/master/banner-support.svg"
+alt='Tech For Palestine'
+width="100%">](https://techforpalestine.org/learn-more)
+<a>
+</a>
+<div align="center">
+
 <h1 align="center">Hi, I'm EroGamer</a></h1>
 
 <p align="center">
