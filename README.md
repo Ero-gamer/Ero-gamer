@@ -5,7 +5,7 @@ width="100%">](https://techforpalestine.org/learn-more)
 </a>
 <div align="center">
 
-<h1 align="center">Hi, I'm EroGamer! A vibe coder</a></h1>
+<h1 >ђєll๏ ๔єשร! เ'๓ єг๏ﻮค๓єг ค שเ๒є ς๏๔єг</a></h1>
 
 ![Stats](./profile/stats.svg)
 
