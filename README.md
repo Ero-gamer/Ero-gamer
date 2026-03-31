@@ -7,6 +7,8 @@ width="100%">](https://techforpalestine.org/learn-more)
 
 <h1 >ђєll๏ ๔єשร! เ'๓ єг๏ﻮค๓єг ค שเ๒є ς๏๔єг</a></h1>
 
+[![GitHub Streak](https://streak-stats.demolab.com/?user=Ero-gamer)](https://git.io/streak-stats)
+
 ![Stats](./profile/stats.svg)
 
 [<img src="https://moco.mehiz.live/get/@Ero-gamer?theme=rule34" alt="moe-counter" />]()
