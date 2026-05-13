@@ -11,9 +11,6 @@ width="100%">](https://techforpalestine.org/learn-more)
 
 # ☕ Buy me a coffee
 
-This application is completely free, but if you want to support the project development, you can
-send a donation to the crypto wallets below:
-
 | </br> ![Bitcoin](https://img.shields.io/badge/Bitcoin-EAB300?style=for-the-badge&logo=Bitcoin%20SV&logoColor=white) <br/> <br/> `19Zks5VmhPtPPiZNHQUv71vfLyEeCtec2T` <br/> <br/> | </br> ![Tether](https://img.shields.io/badge/USDT%20(TRC20)-168363?style=for-the-badge&logo=tether&logoColor=white) <br/> <br/> `TAxmtUbhiWEgY9bDQbgaaTPcmoS8EfJkKR` <br/> <br/>
 
 | </br> ![Ethereum](https://img.shields.io/badge/Ethereum-3C3C3D?logo=ethereum&logoColor=white) <br/> <br/> `0x7f92c4a838286a48f007419c9707f9096dc6675d` <br/> <br/> | </br> ![Solana](https://img.shields.io/badge/Solana-9945FF?logo=solana&logoColor=fff) <br/> <br/> `5KCKZtKtYd9J5UB4VW3HJny4cBWKAJktmGUkfxsdsh9S` <br/> <br/> |
