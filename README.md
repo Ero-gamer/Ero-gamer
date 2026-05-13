@@ -17,7 +17,7 @@ width="100%">](https://techforpalestine.org/learn-more)
 <tr>
 <td>
 
-**₿ Bitcoin**
+![Bitcoin](https://img.shields.io/badge/Bitcoin-EAB300?style=for-the-badge&logo=Bitcoin%20SV&logoColor=white)
 
 ```
 19Zks5VmhPtPPiZNHQUv71vfLyEeCtec2T
@@ -26,7 +26,7 @@ width="100%">](https://techforpalestine.org/learn-more)
 </td>
 <td>
 
-**₮ USDT (TRC20)**
+![Tether](https://img.shields.io/badge/USDT%20(TRC20)-168363?style=for-the-badge&logo=tether&logoColor=white)
 
 ```
 TAxmtUbhiWEgY9bDQbgaaTPcmoS8EfJkKR
@@ -37,7 +37,7 @@ TAxmtUbhiWEgY9bDQbgaaTPcmoS8EfJkKR
 <tr>
 <td>
 
-**Ξ Ethereum**
+![Ethereum](https://img.shields.io/badge/Ethereum-3C3C3D?logo=ethereum&logoColor=white&style=for-the-badge)
 
 ```
 0x7f92c4a838286a48f007419c9707f9096dc6675d
@@ -46,7 +46,7 @@ TAxmtUbhiWEgY9bDQbgaaTPcmoS8EfJkKR
 </td>
 <td>
 
-**◎ Solana**
+![Solana](https://img.shields.io/badge/Solana-9945FF?logo=solana&logoColor=fff&style=for-the-badge)
 
 ```
 5KCKZtKtYd9J5UB4VW3HJny4cBWKAJktmGUkfxsdsh9S
@@ -57,7 +57,7 @@ TAxmtUbhiWEgY9bDQbgaaTPcmoS8EfJkKR
 <tr>
 <td>
 
-**💎 TON**
+![TON](https://img.shields.io/badge/TON-0098EA?style=for-the-badge&logo=telegram&logoColor=white)
 
 ```
 UQAN5OUU7YjxFPEPP0-LC62lWL_CF_LqgVhz9qjbvzLhb74F
@@ -66,7 +66,7 @@ UQAN5OUU7YjxFPEPP0-LC62lWL_CF_LqgVhz9qjbvzLhb74F
 </td>
 <td>
 
-**🟡 Binance ID (UID)**
+![Binance](https://img.shields.io/badge/Binance%20ID%20(UID)-F0B90B?style=for-the-badge&logo=binance&logoColor=white)
 
 ```
 583622748
