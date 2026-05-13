@@ -1,39 +1,84 @@
-[<img src="https://raw.githubusercontent.com/Safouene1/support-palestine-banner/master/banner-support.svg"
+[<img src="https://raw.githubusercontent.com/Ero-gamer/support-palestine-banner/master/banner-support.svg"
 alt='Tech For Palestine'
 width="100%">](https://techforpalestine.org/learn-more)
 <a>
 </a>
 <div align="center">
 
-<h1 >ђєll๏ ๔єשร! เ'๓ єг๏ﻮค๓єг ค שเ๒є ς๏๔єг</a></h1>
+<h1>ђєll๏ ๔єשร! เ'๓ єг๏ﻮค๓єг ค שเ๒є ς๏๔єг</h1>
 
 ![Quote](https://github-readme-quotes-bay.vercel.app/quote?theme=dark)
 
-# ☕ Buy me a coffee
+</div>
 
-| </br> ![Bitcoin](https://img.shields.io/badge/Bitcoin-EAB300?style=for-the-badge&logo=Bitcoin%20SV&logoColor=white) <br/> <br/> `19Zks5VmhPtPPiZNHQUv71vfLyEeCtec2T` <br/> <br/> | </br> ![Tether](https://img.shields.io/badge/USDT%20(TRC20)-168363?style=for-the-badge&logo=tether&logoColor=white) <br/> <br/> `TAxmtUbhiWEgY9bDQbgaaTPcmoS8EfJkKR` <br/> <br/>
+## ☕ Buy me a coffee
 
-| </br> ![Ethereum](https://img.shields.io/badge/Ethereum-3C3C3D?logo=ethereum&logoColor=white) <br/> <br/> `0x7f92c4a838286a48f007419c9707f9096dc6675d` <br/> <br/> | </br> ![Solana](https://img.shields.io/badge/Solana-9945FF?logo=solana&logoColor=fff) <br/> <br/> `5KCKZtKtYd9J5UB4VW3HJny4cBWKAJktmGUkfxsdsh9S` <br/> <br/> |
+<table>
+<tr>
+<td>
 
-TON:
-`UQAN5OUU7YjxFPEPP0-LC62lWL_CF_LqgVhz9qjbvzLhb74F`
+**₿ Bitcoin**
 
-Binance ID (UID): `583622748`
+```
+19Zks5VmhPtPPiZNHQUv71vfLyEeCtec2T
+```
+
+</td>
+<td>
+
+**₮ USDT (TRC20)**
+
+```
+TAxmtUbhiWEgY9bDQbgaaTPcmoS8EfJkKR
+```
+
+</td>
+</tr>
+<tr>
+<td>
+
+**Ξ Ethereum**
+
+```
+0x7f92c4a838286a48f007419c9707f9096dc6675d
+```
+
+</td>
+<td>
+
+**◎ Solana**
+
+```
+5KCKZtKtYd9J5UB4VW3HJny4cBWKAJktmGUkfxsdsh9S
+```
+
+</td>
+</tr>
+<tr>
+<td>
+
+**💎 TON**
+
+```
+UQAN5OUU7YjxFPEPP0-LC62lWL_CF_LqgVhz9qjbvzLhb74F
+```
+
+</td>
+<td>
+
+**🟡 Binance ID (UID)**
+
+```
+583622748
+```
+
+</td>
+</tr>
+</table>
 
 <div align="center">
 
 <h3 align="center">GitHub Stats</h3>
-
-<!--
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/hecker-01/hecker-01/output/github-snake-dark.svg" />
-  <img alt="github-snake" src="https://raw.githubusercontent.com/hecker-01/hecker-01/output/github-snake-dark.svg" />
-</picture>
--->
-
-</div>
-
-<div align="center">
 
 [![GitHub Streak](https://streak-stats.demolab.com?user=Ero-Gamer&theme=catppuccin_mocha&border=45475a&ring=cba6f7&fire=cba6f7&currStreakLabel=cba6f7&sideLabels=cdd6f4&currStreakNum=cdd6f4&sideNums=cdd6f4&dates=a6adc8&border_radius=7.5)](https://github.com/Ero-Gamer)
 
