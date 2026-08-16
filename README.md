@@ -5,7 +5,7 @@ width="100%">](https://techforpalestine.org/learn-more)
 </a>
 <div align="center">
 
-<h1>ђєll๏ ๔єשร! เ'๓ єг๏ﻮค๓єг ค שเ๒є ς๏๔єг</h1>
+<h1>السَّلاَمُ عَلَيْكُمْ وَرَحْمَةُ اللهِ وَبَرَكَاتُهُ...✨</h1>
 
 ![Quote](https://github-readme-quotes-bay.vercel.app/quote?theme=dark)
 
@@ -54,8 +54,6 @@ UQAN5OUU7YjxFPEPP0-LC62lWL_CF_LqgVhz9qjbvzLhb74F
 <img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/footers/gray0_ctp_on_line.svg?sanitize=true" width="600" alt="Catppuccin Footer"/>
 
 </div>
-
-![Stats](./profile/stats.svg)
 
 [<img src="https://moco.mehiz.live/get/@Ero-gamer?theme=rule34" alt="moe-counter" />]()
 
