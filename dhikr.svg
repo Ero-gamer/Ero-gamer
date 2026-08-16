@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="120" viewBox="0 0 600 120">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@700&amp;display=swap');
+    
+    .dhikr {
+      font-family: 'Amiri', 'Traditional Arabic', 'Arial', serif;
+      font-size: 26px;
+      fill: #58a6ff;
+      direction: rtl;
+      unicode-bidi: isolate;
+      text-anchor: middle;
+      dominant-baseline: central;
+      opacity: 0;
+      animation: cycleText 32s infinite ease-in-out;
+    }
+
+    /* 8 items × 4s per item = 32s total loop */
+    .d1 { animation-delay: 0s; }
+    .d2 { animation-delay: 4s; }
+    .d3 { animation-delay: 8s; }
+    .d4 { animation-delay: 12s; }
+    .d5 { animation-delay: 16s; }
+    .d6 { animation-delay: 20s; }
+    .d7 { animation-delay: 24s; }
+    .d8 { animation-delay: 28s; }
+
+    @keyframes cycleText {
+      0%    { opacity: 0; transform: translateY(4px); }
+      3%    { opacity: 1; transform: translateY(0); }
+      9.5%  { opacity: 1; transform: translateY(0); }
+      12.5% { opacity: 0; transform: translateY(-4px); }
+      100%  { opacity: 0; }
+    }
+  </style>
+
+  <rect width="100%" height="100%" fill="none" />
+
+  <!-- Tasbih, Istighfar & Daily Dhikr -->
+  <text x="300" y="60" class="dhikr d1">سُبْحَانَ اللَّهِ وَبِحَمْدِهِ ، سُبْحَانَ اللَّهِ الْعَظِيمِ</text>
+  <text x="300" y="60" class="dhikr d2">أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لَا إِلَهَ إِلَّا هُوَ الْحَيَّ الْقَيُّومَ وَأَتُوبُ إِلَيْهِ</text>
+  <text x="300" y="60" class="dhikr d3">لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ</text>
+  <text x="300" y="60" class="dhikr d4">اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ</text>
+  <text x="300" y="60" class="dhikr d5">لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ الْعَلِيِّ الْعَظِيمِ</text>
+  <text x="300" y="60" class="dhikr d6">سُبْحَانَ اللَّهِ ، وَالْحَمْدُ لِلَّهِ ، وَلَا إِلَهَ إِلَّا اللَّهُ ، وَاللَّهُ أَكْبَرُ</text>
+  <text x="300" y="60" class="dhikr d7">يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ</text>
+  <text x="300" y="60" class="dhikr d8">حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ</text>
+</svg>
