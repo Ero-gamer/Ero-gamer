@@ -7,6 +7,10 @@ width="100%">](https://techforpalestine.org/learn-more)
 
 <h1>السَّلاَمُ عَلَيْكُمْ وَرَحْمَةُ اللهِ وَبَرَكَاتُهُ...✨</h1>
 
+<p align="center">
+  <img src="./dhikr.svg" alt="Daily Dhikr and Tasbih" />
+</p>
+
 ![Quote](https://github-readme-quotes-bay.vercel.app/quote?theme=dark)
 
 </div>
