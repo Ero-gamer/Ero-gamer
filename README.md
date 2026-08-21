@@ -51,7 +51,7 @@ UQAN5OUU7YjxFPEPP0-LC62lWL_CF_LqgVhz9qjbvzLhb74F
 
 <h3 align="center">GitHub Stats</h3>
 
-[![GitHub Streak](https://streak-stats.demolab.com?user=Ero-Gamer&theme=catppuccin_mocha&border=45475a&ring=cba6f7&fire=cba6f7&currStreakLabel=cba6f7&sideLabels=cdd6f4&currStreakNum=cdd6f4&sideNums=cdd6f4&dates=a6adc8&border_radius=7.5)](https://github.com/Ero-Gamer)
+[![GitHub Streak](https://github-readme-streak-stats.herokuapp.com?user=Ero-Gamer&theme=catppuccin_mocha&border=45475a&ring=cba6f7&fire=cba6f7&currStreakLabel=cba6f7&sideLabels=cdd6f4&currStreakNum=cdd6f4&sideNums=cdd6f4&dates=a6adc8&border_radius=7.5)](https://github.com/Ero-Gamer)
 
 [![Top Langs](https://github-readme-stats-rlkg-c4pmoibxf-denvercoder1s-projects.vercel.app/api/top-langs/?username=Ero-Gamer&show_icons=true&theme=catppuccin_mocha&icon_color=cba6f7&border_color=45475a&title_color=cdd6f4&text_color=cdd6f4&border_radius=7.5&layout=compact)](https://github.com/Ero-Gamer?tab=repositories)
 
