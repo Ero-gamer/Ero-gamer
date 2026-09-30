@@ -11,6 +11,9 @@ width="100%">](https://techforpalestine.org/learn-more)
   <img src="./dhikr.svg" alt="Daily Dhikr and Tasbih" />
 </p>
 
+### ✍️ Random Devs Quotes:
+![](https://quotes-github-readme.vercel.app/api?type=horizontal&theme=dark)
+
 ![Quote](https://github-readme-quotes-bay.vercel.app/quote?theme=dark)
 
 </div>
