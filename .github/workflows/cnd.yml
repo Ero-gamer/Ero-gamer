@@ -1,0 +1,45 @@
+name: Clear and Archive All Inbox Notifications
+
+on:
+  workflow_dispatch:
+
+jobs:
+  archive-notifications:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch and archive all inbox notification threads
+        run: |
+          echo "Fetching notification threads..."
+          
+          # 1. Fetch thread IDs currently sitting in the inbox
+          THREADS=$(curl -s -X GET \
+            -H "Authorization: Bearer ${{ secrets.GH_NOTIF_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/notifications?all=true" | jq -r '.[].id')
+
+          if [ -z "$THREADS" ]; then
+            echo "No notification threads found."
+          else
+            echo "Found threads. Archiving..."
+            # 2. Delete/Done each thread individually to clear ghost references
+            for THREAD_ID in $THREADS; do
+              echo "Archiving thread: $THREAD_ID"
+              curl -s -X DELETE \
+                -H "Authorization: Bearer ${{ secrets.GH_NOTIF_TOKEN }}" \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "https://api.github.com/notifications/threads/$THREAD_ID"
+            done
+          fi
+
+          # 3. Mark last_read_at timestamp to current time across all repos
+          LAST_READ=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          curl -s -X PUT \
+            -H "Authorization: Bearer ${{ secrets.GH_NOTIF_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -d "{\"last_read_at\":\"$LAST_READ\",\"read\":true}" \
+            "https://api.github.com/notifications"
+
+          echo "Successfully archived and cleared notification inbox."
