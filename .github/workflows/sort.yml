@@ -1,0 +1,39 @@
+name: Fetch & Sort Used-By repos
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'
+
+jobs:
+  sort-dependents:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x' # Or use '3.x' for dynamic latest stable version
+
+      - name: Fetch and sort dependent repositories by stars
+        uses: oxsecurity/github-dependents-info@v1
+        with:
+          repo: RustAudio/rodio
+          sort: stars
+          max_repos: 100
+          markdownfile: ./DEPENDENTS.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit and push report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]"
+          git add DEPENDENTS.md
+          git commit -m "Update RustAudio/rodio dependents sorted by stars" || exit 0
+          git push
