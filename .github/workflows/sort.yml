@@ -21,7 +21,7 @@ jobs:
           python-version: '3.x' # Or use '3.x' for dynamic latest stable version
 
       - name: GitHub Dependents Info
-        uses: nvuillam/github-dependents-info@v4.0.0
+        uses: nvuillam/github-dependents-info@v4.1.0
         with:
           repo: RustAudio/rodio
           sort: stars
