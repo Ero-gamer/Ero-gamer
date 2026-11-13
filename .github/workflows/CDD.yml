@@ -13,133 +13,150 @@ on:
         default: true
         type: boolean
 
+permissions:
+  contents: read
+
 jobs:
   package-commit:
     runs-on: ubuntu-latest
+    env:
+      TARGET_REPOSITORY: Kotatsu-Redo/Kotatsu-Redo
+
     steps:
-      - name: Validate input and fetch commits from Kotatsu-Redo
+      - name: Validate input and fetch commits
         id: fetch
         shell: bash
+        env:
+          COMMIT_REF: ${{ inputs.commit_ref }}
         run: |
           set -euo pipefail
 
-          # Trim whitespace from user input
-          RAW_INPUT=$(echo "${{ inputs.commit_ref }}" | xargs)
+          raw_input="$COMMIT_REF"
+          raw_input="${raw_input#"${raw_input%%[![:space:]]*}"}"
+          raw_input="${raw_input%"${raw_input##*[![:space:]]}"}"
 
-          if [[ -z "$RAW_INPUT" ]]; then
+          if [[ -z "$raw_input" ]]; then
             echo "::error::Commit SHA or range cannot be empty."
             exit 1
           fi
 
-          # Validate allowed characters (hex hashes and optional '..' range separator)
-          if [[ ! "$RAW_INPUT" =~ ^[0-9a-fA-F]{4,40}(\.\.[0-9a-fA-F]{4,40})?$ ]]; then
-            echo "::error::Invalid format '$RAW_INPUT'. Enter a single commit hash (e.g. 9ef7077) or a range (e.g. 497b7e4..9ef7077)."
+          if [[ ! "$raw_input" =~ ^[0-9a-fA-F]{4,40}(\.\.[0-9a-fA-F]{4,40})?$ ]]; then
+            echo "::error::Invalid format. Enter a commit hash (e.g. 9ef7077) or range (e.g. 497b7e4..9ef7077)."
             exit 1
           fi
 
-          git init target-repo
+          git init --quiet target-repo
           cd target-repo
-          git remote add origin "https://github.com"
+          git remote add origin "https://github.com/${TARGET_REPOSITORY}.git"
 
-          if [[ "$RAW_INPUT" == *".."* ]]; then
-            START_REF="${RAW_INPUT%%..*}"
-            END_REF="${RAW_INPUT##*..}"
+          fetch_commit() {
+            local input="$1"
+            local destination="$2"
 
-            echo "Fetching commit range: $START_REF .. $END_REF"
-            if ! git fetch --depth=50 origin "$START_REF" "$END_REF" 2>/dev/null; then
-              echo "::error::Could not fetch one or both commits in '$RAW_INPUT'. Verify that both hashes exist in Kotatsu-Redo/Kotatsu-Redo."
-              exit 1
+            if ! git fetch --no-tags --depth=1 origin "$input"; then
+              echo "::error::Could not fetch commit '$input' from ${TARGET_REPOSITORY}. Check that the SHA exists and is accessible."
+              return 1
             fi
 
-            # Deepen history if merge-base is not yet present
-            if ! git merge-base "$START_REF" "$END_REF" >/dev/null 2>&1; then
-              echo "Deepening commit history to resolve range..."
-              git fetch --deepen=250 origin "$START_REF" "$END_REF" || git fetch --unshallow origin
+            local full_sha
+            if ! full_sha="$(git rev-parse --verify 'FETCH_HEAD^{commit}')"; then
+              echo "::error::Fetch did not resolve '$input' to a commit."
+              return 1
             fi
 
-            START_FULL=$(git rev-parse "$START_REF")
-            END_FULL=$(git rev-parse "$END_REF")
-            SHORT_LABEL="$(git rev-parse --short=7 "$START_FULL")-to-$(git rev-parse --short=7 "$END_FULL")"
+            git update-ref "$destination" "$full_sha"
+          }
 
-            echo "MODE=range" >> "$GITHUB_OUTPUT"
-            echo "START_SHA=$START_FULL" >> "$GITHUB_OUTPUT"
-            echo "END_SHA=$END_FULL" >> "$GITHUB_OUTPUT"
-            echo "LABEL=$SHORT_LABEL" >> "$GITHUB_OUTPUT"
+          if [[ "$raw_input" == *".."* ]]; then
+            start_ref="${raw_input%%..*}"
+            end_ref="${raw_input##*..}"
+
+            echo "Fetching commit range: ${start_ref} .. ${end_ref}"
+            fetch_commit "$start_ref" refs/cdd/start
+            fetch_commit "$end_ref" refs/cdd/end
+
+            start_sha="$(git rev-parse refs/cdd/start)"
+            end_sha="$(git rev-parse refs/cdd/end)"
+            label="$(git rev-parse --short=7 "$start_sha")-to-$(git rev-parse --short=7 "$end_sha")"
+            mode=range
           else
-            echo "Fetching single commit: $RAW_INPUT"
-            if ! git fetch --depth=2 origin "$RAW_INPUT" 2>/dev/null; then
-              echo "::error::Commit '$RAW_INPUT' was not found in Kotatsu-Redo/Kotatsu-Redo. Double-check the SHA and try again."
-              exit 1
-            fi
+            echo "Fetching single commit: $raw_input"
+            fetch_commit "$raw_input" refs/cdd/end
 
-            END_FULL=$(git rev-parse FETCH_HEAD)
-            SHORT_LABEL=$(git rev-parse --short=7 "$END_FULL")
-
-            echo "MODE=single" >> "$GITHUB_OUTPUT"
-            echo "START_SHA=" >> "$GITHUB_OUTPUT"
-            echo "END_SHA=$END_FULL" >> "$GITHUB_OUTPUT"
-            echo "LABEL=$SHORT_LABEL" >> "$GITHUB_OUTPUT"
+            start_sha=""
+            end_sha="$(git rev-parse refs/cdd/end)"
+            label="$(git rev-parse --short=7 "$end_sha")"
+            mode=single
           fi
+
+          {
+            echo "MODE=$mode"
+            echo "START_SHA=$start_sha"
+            echo "END_SHA=$end_sha"
+            echo "LABEL=$label"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Package changed files and optional deleted log into ZIP
         id: package
         shell: bash
+        env:
+          COMMIT_REF: ${{ inputs.commit_ref }}
+          INCLUDE_DELETED_LOG: ${{ inputs.include_deleted_log }}
+          MODE: ${{ steps.fetch.outputs.MODE }}
+          START_SHA: ${{ steps.fetch.outputs.START_SHA }}
+          END_SHA: ${{ steps.fetch.outputs.END_SHA }}
+          LABEL: ${{ steps.fetch.outputs.LABEL }}
         run: |
           set -euo pipefail
           cd target-repo
 
-          MODE="${{ steps.fetch.outputs.MODE }}"
-          START_SHA="${{ steps.fetch.outputs.START_SHA }}"
-          END_SHA="${{ steps.fetch.outputs.END_SHA }}"
-          LABEL="${{ steps.fetch.outputs.LABEL }}"
-          ZIP_PATH="../Kotatsu-Redo-${LABEL}-changed.zip"
+          zip_path="../Kotatsu-Redo-${LABEL}-changed.zip"
+          changed_list=../changed.list
+          deleted_list=../deleted.txt
 
           if [[ "$MODE" == "range" ]]; then
-            git diff --name-only --diff-filter=ACMRT -z "$START_SHA" "$END_SHA" > ../changed.list
-            git diff --name-only --diff-filter=D "$START_SHA" "$END_SHA" > ../deleted.txt
+            git diff --name-only --diff-filter=ACMRT -z "$START_SHA" "$END_SHA" -- > "$changed_list"
+            git diff --name-only --diff-filter=D "$START_SHA" "$END_SHA" -- > "$deleted_list"
           else
-            # Handles both standard commits and initial root commits cleanly
-            git diff-tree --root --no-commit-id --name-only --diff-filter=ACMRT -r -z "$END_SHA" > ../changed.list
-            git diff-tree --root --no-commit-id --name-only --diff-filter=D -r "$END_SHA" > ../deleted.txt
+            git diff-tree --root --no-commit-id --name-only --diff-filter=ACMRT -r -z "$END_SHA" -- > "$changed_list"
+            git diff-tree --root --no-commit-id --name-only --diff-filter=D -r "$END_SHA" -- > "$deleted_list"
           fi
 
-          CHANGED_COUNT=$(tr -cd '\0' < ../changed.list | wc -c | xargs)
-          DELETED_COUNT=$(wc -l < ../deleted.txt | xargs)
+          changed_count="$(tr -cd '\0' < "$changed_list" | wc -c | xargs)"
+          deleted_count="$(wc -l < "$deleted_list" | xargs)"
+          echo "Found $changed_count added/modified file(s) and $deleted_count deleted file(s)."
 
-          echo "Found $CHANGED_COUNT added/modified file(s) and $DELETED_COUNT deleted file(s)."
-
-          if [[ "$CHANGED_COUNT" -eq 0 && "$DELETED_COUNT" -eq 0 ]]; then
-            echo "::error::No file changes were detected for '${{ inputs.commit_ref }}'. If you entered a range, ensure the older commit is listed first (old..new)."
+          if [[ "$changed_count" -eq 0 && "$deleted_count" -eq 0 ]]; then
+            echo "::error::No file changes were detected for '$COMMIT_REF'. For a range, provide older_sha..newer_sha."
             exit 1
           fi
 
-          if [[ "$CHANGED_COUNT" -gt 0 ]]; then
-            # Use a temporary staging directory so zip works reliably regardless of file count
-            mkdir -p ../stage
-            xargs -0 -a ../changed.list git archive --format=tar "$END_SHA" -- | tar -x -C ../stage
+          mkdir -p ../stage
+          if [[ "$changed_count" -gt 0 ]]; then
+            # NUL-delimited paths safely handle spaces and other special characters.
+            xargs -0 -r -a "$changed_list" git archive --format=tar "$END_SHA" -- | tar -x -C ../stage
           else
-            echo "::warning::This commit only deleted files; no modified or added files exist to archive."
-            mkdir -p ../stage
+            echo "::warning::This input only deletes files; there are no added or modified files to archive."
           fi
 
-          if [[ "${{ inputs.include_deleted_log }}" == "true" ]]; then
-            if [[ "$DELETED_COUNT" -gt 0 ]]; then
+          if [[ "$INCLUDE_DELETED_LOG" == "true" ]]; then
+            if [[ "$deleted_count" -gt 0 ]]; then
               {
-                echo "Deleted files in Kotatsu-Redo (${{ inputs.commit_ref }}):"
+                echo "Deleted files in Kotatsu-Redo ($COMMIT_REF):"
                 echo "----------------------------------------------------"
-                cat ../deleted.txt
+                cat "$deleted_list"
               } > ../stage/deleted-files.txt
             else
-              echo "No files were deleted in Kotatsu-Redo (${{ inputs.commit_ref }})." > ../stage/deleted-files.txt
+              echo "No files were deleted in Kotatsu-Redo ($COMMIT_REF)." > ../stage/deleted-files.txt
             fi
           fi
 
           if [[ -z "$(ls -A ../stage)" ]]; then
-            echo "::error::Nothing to package into ZIP (0 changed files and deleted-files.txt disabled)."
+            echo "::error::Nothing to package (no changed files and deleted-files.txt is disabled)."
             exit 1
           fi
 
-          (cd ../stage && zip -rq "$ZIP_PATH" .)
+          (cd ../stage && zip -rq "$zip_path" .)
           echo "ZIP_NAME=Kotatsu-Redo-${LABEL}-changed" >> "$GITHUB_OUTPUT"
 
       - name: Upload ZIP artifact
@@ -154,8 +171,12 @@ jobs:
       - name: Error Summary on Failure
         if: failure()
         shell: bash
+        env:
+          COMMIT_REF: ${{ inputs.commit_ref }}
         run: |
-          echo "### Packaging Failed" >> "$GITHUB_STEP_SUMMARY"
-          echo "Could not generate ZIP for input: \`${{ inputs.commit_ref }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Ensure the commit hash exists in **Kotatsu-Redo/Kotatsu-Redo**." >> "$GITHUB_STEP_SUMMARY"
-          echo "- For ranges, use \`older_sha..newer_sha\` (for example: \`497b7e4..9ef7077\`)." >> "$GITHUB_STEP_SUMMARY"
+          {
+            printf '%s\n' '### Packaging Failed'
+            printf 'Could not generate ZIP for input: `%s`\n' "$COMMIT_REF"
+            printf '%s\n' '- Verify the commit hash exists and is accessible in **Kotatsu-Redo/Kotatsu-Redo**.'
+            printf '%s\n' '- For ranges, use `older_sha..newer_sha` (for example: `497b7e4..9ef7077`).'
+          } >> "$GITHUB_STEP_SUMMARY"
