@@ -4,14 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       commit_ref:
-        description: 'Commit SHA (e.g. 9ef7077) OR Range (e.g. 497b7e4..9ef7077)'
+        description: 'Commit SHA (e.g. 9ef7077) OR range (e.g. 497b7e4..9ef7077)'
         required: true
         type: string
-      include_deleted_log:
-        description: 'Include deleted-files.txt inside the ZIP?'
-        required: false
-        default: true
-        type: boolean
 
 permissions:
   contents: read
@@ -23,7 +18,7 @@ jobs:
       TARGET_REPOSITORY: Kotatsu-Redo/Kotatsu-Redo
 
     steps:
-      - name: Validate input and fetch commits
+      - name: Fetch commit(s) and determine comparison
         id: fetch
         shell: bash
         env:
@@ -31,17 +26,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          raw_input="$COMMIT_REF"
-          raw_input="${raw_input#"${raw_input%%[![:space:]]*}"}"
+          raw_input="${COMMIT_REF#"${COMMIT_REF%%[![:space:]]*}"}"
           raw_input="${raw_input%"${raw_input##*[![:space:]]}"}"
 
-          if [[ -z "$raw_input" ]]; then
-            echo "::error::Commit SHA or range cannot be empty."
-            exit 1
-          fi
-
           if [[ ! "$raw_input" =~ ^[0-9a-fA-F]{4,40}(\.\.[0-9a-fA-F]{4,40})?$ ]]; then
-            echo "::error::Invalid format. Enter a commit hash (e.g. 9ef7077) or range (e.g. 497b7e4..9ef7077)."
+            echo "::error::Enter a commit SHA (at least 4 hexadecimal characters) or a range (older_sha..newer_sha)."
             exit 1
           fi
 
@@ -53,16 +42,18 @@ jobs:
             local input="$1"
             local destination="$2"
 
-            if ! git fetch --no-tags --depth=1 origin "$input"; then
-              echo "::error::Could not fetch commit '$input' from ${TARGET_REPOSITORY}. Check that the SHA exists and is accessible."
+            # Fetch the commit and its parent. The parent is needed to calculate
+            # the changes introduced by a single commit rather than its full tree.
+            if ! git fetch --no-tags --depth=2 origin "$input"; then
+              echo "::error::Could not fetch '$input' from ${TARGET_REPOSITORY}. Check that the commit exists and is accessible."
               return 1
             fi
 
             local full_sha
-            if ! full_sha="$(git rev-parse --verify 'FETCH_HEAD^{commit}')"; then
+            full_sha="$(git rev-parse --verify 'FETCH_HEAD^{commit}')" || {
               echo "::error::Fetch did not resolve '$input' to a commit."
               return 1
-            fi
+            }
 
             git update-ref "$destination" "$full_sha"
           }
@@ -71,7 +62,12 @@ jobs:
             start_ref="${raw_input%%..*}"
             end_ref="${raw_input##*..}"
 
-            echo "Fetching commit range: ${start_ref} .. ${end_ref}"
+            if [[ -z "$start_ref" || -z "$end_ref" ]]; then
+              echo "::error::A range must have both endpoints: older_sha..newer_sha."
+              exit 1
+            fi
+
+            echo "Fetching range: ${start_ref} .. ${end_ref}"
             fetch_commit "$start_ref" refs/cdd/start
             fetch_commit "$end_ref" refs/cdd/end
 
@@ -80,7 +76,7 @@ jobs:
             label="$(git rev-parse --short=7 "$start_sha")-to-$(git rev-parse --short=7 "$end_sha")"
             mode=range
           else
-            echo "Fetching single commit: $raw_input"
+            echo "Fetching commit: $raw_input"
             fetch_commit "$raw_input" refs/cdd/end
 
             start_sha=""
@@ -96,12 +92,11 @@ jobs:
             echo "LABEL=$label"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Package changed files and optional deleted log into ZIP
+      - name: Package changed files and deleted.txt
         id: package
         shell: bash
         env:
           COMMIT_REF: ${{ inputs.commit_ref }}
-          INCLUDE_DELETED_LOG: ${{ inputs.include_deleted_log }}
           MODE: ${{ steps.fetch.outputs.MODE }}
           START_SHA: ${{ steps.fetch.outputs.START_SHA }}
           END_SHA: ${{ steps.fetch.outputs.END_SHA }}
@@ -110,73 +105,80 @@ jobs:
           set -euo pipefail
           cd target-repo
 
-          zip_path="../Kotatsu-Redo-${LABEL}-changed.zip"
-          changed_list=../changed.list
-          deleted_list=../deleted.txt
+          changed_list=../changed-files.nul
+          deleted_list=../deleted-files.txt
+          stage_dir=../stage
+          zip_name="Kotatsu-Redo-${LABEL}-changed.zip"
 
           if [[ "$MODE" == "range" ]]; then
-            git diff --name-only --diff-filter=ACMRT -z "$START_SHA" "$END_SHA" -- > "$changed_list"
-            git diff --name-only --diff-filter=D "$START_SHA" "$END_SHA" -- > "$deleted_list"
+            git diff --no-renames --name-only --diff-filter=ACMT -z \
+              "$START_SHA" "$END_SHA" -- > "$changed_list"
+            git diff --no-renames --name-only --diff-filter=D \
+              "$START_SHA" "$END_SHA" -- > "$deleted_list"
           else
-            git diff-tree --root --no-commit-id --name-only --diff-filter=ACMRT -r -z "$END_SHA" -- > "$changed_list"
-            git diff-tree --root --no-commit-id --name-only --diff-filter=D -r "$END_SHA" -- > "$deleted_list"
-          fi
-
-          changed_count="$(tr -cd '\0' < "$changed_list" | wc -c | xargs)"
-          deleted_count="$(wc -l < "$deleted_list" | xargs)"
-          echo "Found $changed_count added/modified file(s) and $deleted_count deleted file(s)."
-
-          if [[ "$changed_count" -eq 0 && "$deleted_count" -eq 0 ]]; then
-            echo "::error::No file changes were detected for '$COMMIT_REF'. For a range, provide older_sha..newer_sha."
-            exit 1
-          fi
-
-          mkdir -p ../stage
-          if [[ "$changed_count" -gt 0 ]]; then
-            # NUL-delimited paths safely handle spaces and other special characters.
-            xargs -0 -r -a "$changed_list" git archive --format=tar "$END_SHA" -- | tar -x -C ../stage
-          else
-            echo "::warning::This input only deletes files; there are no added or modified files to archive."
-          fi
-
-          if [[ "$INCLUDE_DELETED_LOG" == "true" ]]; then
-            if [[ "$deleted_count" -gt 0 ]]; then
-              {
-                echo "Deleted files in Kotatsu-Redo ($COMMIT_REF):"
-                echo "----------------------------------------------------"
-                cat "$deleted_list"
-              } > ../stage/deleted-files.txt
+            if parent_sha="$(git rev-parse --verify "${END_SHA}^" 2>/dev/null)"; then
+              git diff --no-renames --name-only --diff-filter=ACMT -z \
+                "$parent_sha" "$END_SHA" -- > "$changed_list"
+              git diff --no-renames --name-only --diff-filter=D \
+                "$parent_sha" "$END_SHA" -- > "$deleted_list"
             else
-              echo "No files were deleted in Kotatsu-Redo ($COMMIT_REF)." > ../stage/deleted-files.txt
+              # A root commit has no parent, so its files are all newly added.
+              git diff-tree --root --no-commit-id --name-only --diff-filter=ACMT \
+                -r -z "$END_SHA" -- > "$changed_list"
+              git diff-tree --root --no-commit-id --name-only --diff-filter=D \
+                -r "$END_SHA" -- > "$deleted_list"
             fi
           fi
 
-          if [[ -z "$(ls -A ../stage)" ]]; then
-            echo "::error::Nothing to package (no changed files and deleted-files.txt is disabled)."
+          mapfile -d '' -t changed_paths < "$changed_list"
+          changed_count="${#changed_paths[@]}"
+          deleted_count="$(wc -l < "$deleted_list" | tr -d '[:space:]')"
+
+          echo "Found $changed_count added, modified, or renamed file(s), and $deleted_count deleted file(s)."
+
+          if [[ "$changed_count" -eq 0 && "$deleted_count" -eq 0 ]]; then
+            echo "::error::No file changes were found for '$COMMIT_REF'. For a range, provide older_sha..newer_sha."
             exit 1
           fi
 
-          (cd ../stage && zip -rq "$zip_path" .)
-          echo "ZIP_NAME=Kotatsu-Redo-${LABEL}-changed" >> "$GITHUB_OUTPUT"
+          mkdir -p "$stage_dir"
+
+          if [[ "$changed_count" -gt 0 ]]; then
+            # Archive paths in batches to avoid OS argument-size limits.
+            # tar consumes each complete stream, avoiding the previous xargs/SIGPIPE failure.
+            for ((offset = 0; offset < changed_count; offset += 200)); do
+              batch=("${changed_paths[@]:offset:200}")
+              git --literal-pathspecs archive --format=tar "$END_SHA" -- "${batch[@]}" \
+                | tar -xf - -C "$stage_dir"
+            done
+          fi
+
+          # Include an empty file when there were no deletions, so the ZIP
+          # consistently contains deleted.txt.
+          cp "$deleted_list" "$stage_dir/deleted.txt"
+
+          rm -f "../$zip_name"
+          (cd "$stage_dir" && zip -q -r "../$zip_name" .)
+
+          echo "ZIP_NAME=$zip_name" >> "$GITHUB_OUTPUT"
 
       - name: Upload ZIP artifact
-        if: success()
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.package.outputs.ZIP_NAME }}
-          path: Kotatsu-Redo-*-changed.zip
+          path: ${{ steps.package.outputs.ZIP_NAME }}
           if-no-files-found: error
           retention-days: 14
 
-      - name: Error Summary on Failure
+      - name: Error summary on failure
         if: failure()
         shell: bash
         env:
           COMMIT_REF: ${{ inputs.commit_ref }}
         run: |
           {
-            printf '%s\n' '### Packaging Failed'
-            printf 'Could not generate ZIP for input: `%s`\n' "$COMMIT_REF"
-            printf '%s\n' '- Verify the commit hash exists and is accessible in **Kotatsu-Redo/Kotatsu-Redo**.'
-            printf '%s\n' '- For ranges, use `older_sha..newer_sha` (for example: `497b7e4..9ef7077`).'
+            printf '%s\n' '### Packaging failed'
+            printf 'Could not generate the ZIP for input: `%s`\n' "$COMMIT_REF"
+            printf 'The source repository is **%s**. Confirm the commit(s) exist and are accessible.\n' "$TARGET_REPOSITORY"
+            printf '%s\n' 'For a range, use `older_sha..newer_sha`.'
           } >> "$GITHUB_STEP_SUMMARY"
