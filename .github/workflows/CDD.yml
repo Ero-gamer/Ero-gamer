@@ -1,4 +1,4 @@
-name: Zip Kotatsu-Redo Commit Files
+name: Commits dd
 
 on:
   workflow_dispatch:
