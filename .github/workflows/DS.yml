@@ -1,0 +1,184 @@
+name: Commits dd
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_ref:
+        description: 'Commit SHA (e.g. 9ef7077) OR range (e.g. 497b7e4..9ef7077)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package-commit:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_REPOSITORY: HuzaifaKhalid1311/DropSauce
+
+    steps:
+      - name: Fetch commit(s) and determine comparison
+        id: fetch
+        shell: bash
+        env:
+          COMMIT_REF: ${{ inputs.commit_ref }}
+        run: |
+          set -euo pipefail
+
+          raw_input="${COMMIT_REF#"${COMMIT_REF%%[![:space:]]*}"}"
+          raw_input="${raw_input%"${raw_input##*[![:space:]]}"}"
+
+          if [[ ! "$raw_input" =~ ^[0-9a-fA-F]{4,40}(\.\.[0-9a-fA-F]{4,40})?$ ]]; then
+            echo "::error::Enter a commit SHA (at least 4 hexadecimal characters) or a range (older_sha..newer_sha)."
+            exit 1
+          fi
+
+          git init --quiet target-repo
+          cd target-repo
+          git remote add origin "https://github.com/${TARGET_REPOSITORY}.git"
+
+          fetch_commit() {
+            local input="$1"
+            local destination="$2"
+
+            # Fetch the commit and its parent. The parent is needed to calculate
+            # the changes introduced by a single commit rather than its full tree.
+            if ! git fetch --no-tags --depth=2 origin "$input"; then
+              echo "::error::Could not fetch '$input' from ${TARGET_REPOSITORY}. Check that the commit exists and is accessible."
+              return 1
+            fi
+
+            local full_sha
+            full_sha="$(git rev-parse --verify 'FETCH_HEAD^{commit}')" || {
+              echo "::error::Fetch did not resolve '$input' to a commit."
+              return 1
+            }
+
+            git update-ref "$destination" "$full_sha"
+          }
+
+          if [[ "$raw_input" == *".."* ]]; then
+            start_ref="${raw_input%%..*}"
+            end_ref="${raw_input##*..}"
+
+            if [[ -z "$start_ref" || -z "$end_ref" ]]; then
+              echo "::error::A range must have both endpoints: older_sha..newer_sha."
+              exit 1
+            fi
+
+            echo "Fetching range: ${start_ref} .. ${end_ref}"
+            fetch_commit "$start_ref" refs/cdd/start
+            fetch_commit "$end_ref" refs/cdd/end
+
+            start_sha="$(git rev-parse refs/cdd/start)"
+            end_sha="$(git rev-parse refs/cdd/end)"
+            label="$(git rev-parse --short=7 "$start_sha")-to-$(git rev-parse --short=7 "$end_sha")"
+            mode=range
+          else
+            echo "Fetching commit: $raw_input"
+            fetch_commit "$raw_input" refs/cdd/end
+
+            start_sha=""
+            end_sha="$(git rev-parse refs/cdd/end)"
+            label="$(git rev-parse --short=7 "$end_sha")"
+            mode=single
+          fi
+
+          {
+            echo "MODE=$mode"
+            echo "START_SHA=$start_sha"
+            echo "END_SHA=$end_sha"
+            echo "LABEL=$label"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Package changed files and deleted.txt
+        id: package
+        shell: bash
+        env:
+          COMMIT_REF: ${{ inputs.commit_ref }}
+          MODE: ${{ steps.fetch.outputs.MODE }}
+          START_SHA: ${{ steps.fetch.outputs.START_SHA }}
+          END_SHA: ${{ steps.fetch.outputs.END_SHA }}
+          LABEL: ${{ steps.fetch.outputs.LABEL }}
+        run: |
+          set -euo pipefail
+          cd target-repo
+
+          changed_list=../changed-files.nul
+          deleted_list=../deleted-files.txt
+          stage_dir=../stage
+          zip_name="Kotatsu-Redo-${LABEL}-changed.zip"
+
+          if [[ "$MODE" == "range" ]]; then
+            git diff --no-renames --name-only --diff-filter=ACMT -z \
+              "$START_SHA" "$END_SHA" -- > "$changed_list"
+            git diff --no-renames --name-only --diff-filter=D \
+              "$START_SHA" "$END_SHA" -- > "$deleted_list"
+          else
+            if parent_sha="$(git rev-parse --verify "${END_SHA}^" 2>/dev/null)"; then
+              git diff --no-renames --name-only --diff-filter=ACMT -z \
+                "$parent_sha" "$END_SHA" -- > "$changed_list"
+              git diff --no-renames --name-only --diff-filter=D \
+                "$parent_sha" "$END_SHA" -- > "$deleted_list"
+            else
+              # A root commit has no parent, so its files are all newly added.
+              git diff-tree --root --no-commit-id --name-only --diff-filter=ACMT \
+                -r -z "$END_SHA" -- > "$changed_list"
+              git diff-tree --root --no-commit-id --name-only --diff-filter=D \
+                -r "$END_SHA" -- > "$deleted_list"
+            fi
+          fi
+
+          mapfile -d '' -t changed_paths < "$changed_list"
+          changed_count="${#changed_paths[@]}"
+          deleted_count="$(wc -l < "$deleted_list" | tr -d '[:space:]')"
+
+          echo "Found $changed_count added, modified, or renamed file(s), and $deleted_count deleted file(s)."
+
+          if [[ "$changed_count" -eq 0 && "$deleted_count" -eq 0 ]]; then
+            echo "::error::No file changes were found for '$COMMIT_REF'. For a range, provide older_sha..newer_sha."
+            exit 1
+          fi
+
+          mkdir -p "$stage_dir"
+
+          if [[ "$changed_count" -gt 0 ]]; then
+            # Archive paths in batches to avoid OS argument-size limits.
+            # tar consumes each complete stream, avoiding the previous xargs/SIGPIPE failure.
+            for ((offset = 0; offset < changed_count; offset += 200)); do
+              batch=("${changed_paths[@]:offset:200}")
+              git --literal-pathspecs archive --format=tar "$END_SHA" -- "${batch[@]}" \
+                | tar -xf - -C "$stage_dir"
+            done
+          fi
+
+          # Include an empty file when there were no deletions, so the ZIP
+          # consistently contains deleted.txt.
+          cp "$deleted_list" "$stage_dir/deleted.txt"
+
+          rm -f "../$zip_name"
+          (cd "$stage_dir" && zip -q -r "../$zip_name" .)
+
+          echo "ZIP_NAME=$zip_name" >> "$GITHUB_OUTPUT"
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.package.outputs.ZIP_NAME }}
+          path: ${{ steps.package.outputs.ZIP_NAME }}
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Error summary on failure
+        if: failure()
+        shell: bash
+        env:
+          COMMIT_REF: ${{ inputs.commit_ref }}
+        run: |
+          {
+            printf '%s\n' '### Packaging failed'
+            printf 'Could not generate the ZIP for input: `%s`\n' "$COMMIT_REF"
+            printf 'The source repository is **%s**. Confirm the commit(s) exist and are accessible.\n' "$TARGET_REPOSITORY"
+            printf '%s\n' 'For a range, use `older_sha..newer_sha`.'
+          } >> "$GITHUB_STEP_SUMMARY"
