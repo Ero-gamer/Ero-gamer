@@ -1,4 +1,4 @@
-name: Commits dd
+name: DSCD
 
 on:
   workflow_dispatch:
